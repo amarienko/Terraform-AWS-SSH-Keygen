@@ -1,26 +1,27 @@
 /*
-                                     -
-                                     -----                           -
-                                     ---------                      --
-                                     ---------  -                -----
-                                      ---------  ------        -------
-                                        -------  ---------  ----------
-                                           ----  ---------- ----------
-                                             --  ---------- ----------
-   Terraform module for generating            -  ---------- -------
-   ed25519 SSH key pair to be used               ---  ----- ---
-   to control login  access to AWS               --------   -
-   EC2 instances                                 ----------
-                                                 ----------
-                                                  ---------
-                                                      -----
-                                                          -
+                                      -
+                                      -----                           -
+                                      ---------                      --
+                                      ---------  -                -----
+                                       ---------  ------        -------
+                                         -------  ---------  ----------
+                                            ----  ---------- ----------
+                                              --  ---------- ----------
+   Terraform module for  generating SSH        -  ---------- -------
+   key pair to be used to control login           ---  ----- ---
+   login access to AWS EC2 instances              --------   -
+                                                  ----------
+                                                  ----------
+                                                   ---------
+                                                       -----
+                                                           -
 
   Amazon EC2 Key Pair Parameters
 
-  Type:          ED25519
-  Length:        4096
+  Type:          ED25519 / RSA
+  Length:        4096 / 3072 / 2048
   Output Format: OpenSSH public key format
+
 
   Public Key Algorithm References
 
@@ -46,56 +47,66 @@ resource "random_string" "key_name_suffix" {
   min_numeric = 3
 }
 
-resource "tls_private_key" "ed25519" {
-  # Generating public/private ed25519 key pair
-  algorithm = "ED25519"
-  rsa_bits  = 4096
+resource "tls_private_key" "main" {
+  # Generating public/private SSH key pair
+  algorithm = var.algorithm
+  rsa_bits  = var.rsa_bits
+
+  depends_on = [
+    random_string.key_name_suffix,
+  ]
 }
 
 
-resource "aws_key_pair" "ssh_key" {
-  key_name = "ed25519-${random_string.key_name_suffix.result}"
+resource "aws_key_pair" "ssh_key_pair" {
+  key_name = "${lower(var.algorithm)}-${random_string.key_name_suffix.result}"
 
   # `string` variable or file("path_to_keyfile.pub")
-  public_key = tls_private_key.ed25519.public_key_openssh
-
-  depends_on = [
-    tls_private_key.ed25519,
-    random_string.key_name_suffix,
-  ]
+  public_key = tls_private_key.main.public_key_openssh
 
   tags = merge(
     {
-      Name     = "ed25519-${random_string.key_name_suffix.result}"
+      Name     = "${lower(var.algorithm)}-${random_string.key_name_suffix.result}"
       Resource = "key"
-      FullName = "ed25519-${random_string.key_name_suffix.result}.key.${var.domain}"
+      FullName = "${
+        lower(var.algorithm)
+        }-${random_string.key_name_suffix.result
+      }%{if var.domain != null && var.domain != ""}.key${var.domain}%{endif}"
     },
     var.all_tags
   )
+
+  depends_on = [
+    tls_private_key.main,
+    random_string.key_name_suffix,
+  ]
 }
 
 
 /*
   Export private and public `ssh` key-pair to file
-  Res: https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file
 */
 resource "local_sensitive_file" "private_key" {
   # sensitive data
-  content         = tls_private_key.ed25519.private_key_openssh
-  filename        = "${path.root}/ed25519-${random_string.key_name_suffix.result}"
+  filename = "${path.root}/${
+    lower(var.algorithm)}-${random_string.key_name_suffix.result
+  }"
   file_permission = "0600"
+  content         = tls_private_key.main.private_key_openssh
 
   depends_on = [
-    tls_private_key.ed25519,
+    tls_private_key.main,
   ]
 }
 
 resource "local_file" "public_key" {
-  content         = trimspace(tls_private_key.ed25519.public_key_openssh)
-  filename        = "${path.root}/ed25519-${random_string.key_name_suffix.result}.pub"
+  filename = "${path.root}/${
+    lower(var.algorithm)}-${random_string.key_name_suffix.result
+  }.pub"
   file_permission = "0644"
+  content         = trimspace(tls_private_key.main.public_key_openssh)
 
   depends_on = [
-    tls_private_key.ed25519,
+    tls_private_key.main,
   ]
 }
