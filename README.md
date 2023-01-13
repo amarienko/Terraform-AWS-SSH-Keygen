@@ -1,3 +1,10 @@
+<p align="left">
+    <a href="https://developer.hashicorp.com/terraform/downloads" alt="Terraform">
+    <img src="https://img.shields.io/badge/terraform-%3E%3D1.2-blueviolet" /></a>
+    <a href="https://opensource.org/licenses/MIT" alt="License">
+    <img src="https://img.shields.io/github/license/amarienko/Terraform-AWS-SSH-Keygen?color=yellow" /></a>
+</p>
+
 # Terraform AWS SSH-Keygen
 Simple Terraform module for generating `ed25519` or `rsa` SSH key pair to be used to control login access to AWS EC2 instances via SSH. The module generates AWS key pair and exports it to a OpenSSH ["Authorized Keys"](https://www.ssh.com/academy/ssh/authorized-keys-openssh#format-of-the-authorized-keys-file) format files in the root module directory.
 
