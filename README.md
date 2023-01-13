@@ -10,7 +10,7 @@ To use the module you need to add the following module definition block in the r
 
 ```hcl
 /*
-  SSH-Keygen module
+  'SSH-Keygen' module definition
 */
 module "ssh-keygen" {
   source = "github.com/amarienko/Terraform-AWS-SSH-Keygen"
@@ -19,3 +19,69 @@ module "ssh-keygen" {
   rsa_bits  = 2048
 }
 ```
+
+### Inputs
+| Name | Description | Type | Default |
+|------|-------------|:------:|:---------:|
+| algorithm | (Optional) Name of the algorithm to use when generating the private key. | `string` | "ED25519"
+| rsa_bits | (Optional) The size of the generated RSA key in bits | `number` | 4096 |
+| all_tags | (Optional) User defined map of tags to add to `aws_key_pair` resource | `map(string)` | {} |
+| domain | (Optional) User difined objects tree | `string` | "" |
+
+### Outputs
+| Name | Description |
+|------|-------------|
+| ssh\_\_00\_\_keypair_info | Includes general information about the generated key pair: key pair name, key pair ID and fingerprint of public key data, described in Section 4 of RFC4716 |
+| ssh\_\_01\_\_key_name | The key pair name |
+
+### Complex example
+```hcl
+/*
+  Initial local variables definition
+*/
+locals {
+  all_tags = merge(
+    {
+      UUID = uuidv5("dns",
+        "${var.environment}.${var.namespace}.${var.region}.${var.cloud_provider}"
+      )
+      Provider    = var.cloud_provider
+      Tool        = var.tool
+      Namespace   = var.namespace
+      Environment = var.environment
+      Group       = "${var.environment}.${var.namespace}.${var.region}.${var.cloud_provider}"
+    },
+    var.user_tags,
+  )
+}
+
+/*
+  'SSH-Keygen' module
+*/
+module "ssh-keygen" {
+  source = "github.com/amarienko/Terraform-AWS-SSH-Keygen"
+
+  algorithm = "ED25519"
+  all_tags = local.all_tags
+}
+
+/*
+  Output: Key pair details
+*/
+output "ec2__00__keypair" {
+  value = module.ssh-keygen.ssh__00__keypair_info
+}
+```
+
+### Providers
+| Name | Version |
+|------|-------------|
+| [aws](https://registry.terraform.io/providers/hashicorp/aws) | ~> 4.0 |
+| [tls](https://registry.terraform.io/providers/hashicorp/tls) | ~> 4.0.1 |
+| [random](https://registry.terraform.io/providers/hashicorp/random) | ~> 3.0 |
+| [local](https://registry.terraform.io/providers/hashicorp/local) | ~> 2.2 |
+
+### References
+* [RFC 4253](https://www.rfc-editor.org/rfc/rfc4253) The Secure Shell (SSH) Transport Layer Protocol
+* [RFC 4716](https://www.ietf.org/rfc/rfc4716.txt) The Secure Shell (SSH) Public Key File Format
+* [RFC 8709](https://www.rfc-editor.org/rfc/rfc8709) Ed25519 and Ed448 Public Key Algorithms for the Secure Shell (SSH) Protocol
