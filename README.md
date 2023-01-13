@@ -8,7 +8,7 @@ This Terraform module was developed as an addition to the Terraform EC2 Instance
 ### Module Usage
 To use the module you need to add the following module definition block in the root module
 
-```
+```hcl
 /*
   SSH-Keygen module
 */
