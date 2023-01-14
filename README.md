@@ -33,7 +33,7 @@ module "ssh-keygen" {
 | algorithm | (Optional) Name of the algorithm to use when generating the private key. | `string` | "ED25519"
 | rsa_bits | (Optional) The size of the generated RSA key in bits | `number` | 4096 |
 | all_tags | (Optional) User defined map of tags to add to `aws_key_pair` resource | `map(string)` | {} |
-| domain | (Optional) User difined objects tree | `string` | "" |
+| domain | (Optional) User defined objects tree | `string` | "" |
 
 ### Outputs
 | Name | Description |
